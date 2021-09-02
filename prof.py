@@ -1,4 +1,4 @@
-from bs4 import BeautifulSoup
+import common
 
 
 def parse_row(row):
@@ -13,14 +13,8 @@ def is_header(row):
     return qh.text.strip() == 'Question'
 
 
-def load_soup(path):
-    with open(path) as f:
-        soup = BeautifulSoup(f.read(), features="html.parser")
-    return soup
-
-
 def load(path):
-    soup = load_soup(path)
+    soup = common.load_soup(path)
     rows = soup.select('table.qh tr')
     return [parse_row(row) for row in rows if not is_header(row)]
 
