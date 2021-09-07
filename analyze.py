@@ -1,47 +1,45 @@
-import diskcache
-
 import sim
 import prof
 import match
+import common
 
 
-cache = diskcache.Cache(".simcache")
-
-
-@cache.memoize()
-def embeddings_for_prof(path):
+def embeddings_for_prof(path, **kwargs):
     qhist = prof.load(path)
-    return [
-        [s, outcome, sim.embed(s)]
-        for s, outcome in qhist]
+    return [(q, sim.embed(q.text, **kwargs)) for q in qhist]
 
 
 def find_similar(embeddings, q, cutoff=0.5):
     qembed = sim.embed(q)
 
-    compared = [
-        [s, outcome, sim.cmp(embedding, qembed)]
-        for s, outcome, embedding in embeddings]
+    compared = [(q, sim.cmp(embedding, qembed)) for q, embedding in embeddings]
 
-    compared.sort(reverse=True, key=lambda r: r[2])
+    compared.sort(reverse=True, key=lambda c: c[1])
 
-    return [c for c in compared if c[2] >= cutoff]
+    # Drop questions below the cutoff and those that match exactly
+    return [c for c in compared if c[1] >= cutoff and c[1] != 1.]
 
 
 def predict(similar):
     if not similar:
         return 0.
 
-    return sum(outcome * similarity for s, outcome, similarity in similar) / float(len(similar))
+    # Average of outcomes weighted by similarity
+    num = sum(q.correct * similarity for q, similarity in similar)
+    denom = sum(similarity for _, similarity in similar)
+    return num / denom
 
 
-def analyze_question(path, q, cutoff=0.75):
-    embeddings = embeddings_for_prof(path)
-    similar = find_similar(embeddings, q, cutoff=cutoff)
+def analyze_question(path, q, **kwargs):
+    embargs = common.filter_args({'strategy'}, kwargs)
+    embeddings = embeddings_for_prof(path, **embargs)
 
-    print(f"Most similar questions (cutoff={cutoff},n={len(similar)}):")
-    for s, outcome, similarity in similar:
-        print(" -", s, outcome, similarity)
+    simargs = common.filter_args({'cutoff'}, kwargs)
+    similar = find_similar(embeddings, q, **simargs)
+
+    print(f"\nMost similar questions (n={len(similar)}):\n")
+    for q, similarity in similar:
+        print(" -", q.text, q.correct, similarity)
     
     p = predict(similar)
     print("Correct answer confidence:", p)
@@ -67,6 +65,8 @@ def defend(history_path, match_path, **kwargs):
     
     print("\n--- DEFENSE ---\n")
     for i, q, conf, pt in predictions:
-        print(f"{i + 1}. {q} {pt} ({conf})")
+        print(f"{i + 1}. {q}")
+        print("Points: {} (confidence={:.3f})".format(pt, conf))
+        print("")
 
     return predictions

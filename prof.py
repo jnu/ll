@@ -1,10 +1,15 @@
+from collections import namedtuple
+
 import common
+
+
+Question = namedtuple('Question', ['text', 'correct'])
 
 
 def parse_row(row):
     cells = row.find_all('td')
     q = cells[1]
-    return [q.text, 'g' in q['class']]
+    return Question(q.text, 'g' in q['class'])
 
 
 def is_header(row):
