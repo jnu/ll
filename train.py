@@ -61,9 +61,14 @@ def set_seed(seed):
 
 def get_device(model):
     if torch.cuda.is_available():
-        device = torch.device('cuda')
+        for i in range(torch.cuda.device_count()):
+            # Find a free GPU
+            if torch.cuda.memory_reserved > 0:
+                continue
+            print("Using GPU {} for training: {}".format(i, torch.cuda.get_device_name(i)))
+            device = torch.device('cuda:{}'.format(i))
+            break
         model.cuda()
-        print("Using GPU for training:", torch.cuda.get_device_name(0))
     else:
         print("No GPU available; training on CPU.")
         device = torch.device('cpu')

@@ -4,6 +4,7 @@ import match
 import common
 
 
+
 def embeddings_for_prof(path, **kwargs):
     qhist = prof.load(path)
     return [(q, sim.embed(q.text, **kwargs)) for q in qhist]
