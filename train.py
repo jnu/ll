@@ -1,6 +1,7 @@
 import random
 import time
 import datetime
+import os
 
 import numpy as np
 import torch
@@ -59,7 +60,11 @@ def set_seed(seed):
     torch.cuda.manual_seed_all(seed)
 
 
-def get_device(model):
+def get_device():
+    d = os.getenv('TORCH_DEVICE')
+    if d:
+        return torch.device(d)
+
     if torch.cuda.is_available():
         print("GPU is available, looking for a free one ...")
         for i in range(torch.cuda.device_count()):
@@ -67,7 +72,6 @@ def get_device(model):
             if torch.cuda.memory_reserved(i) > 0:
                 continue
             print("Using GPU {} for training: {}".format(i, torch.cuda.get_device_name(i)))
-            model.cuda()
             return torch.device('cuda:{}'.format(i))
 
     print("No free GPU found; training on CPU.")
@@ -94,13 +98,15 @@ def train_on_prof(path, batch_size=32, holdback=0.1, learn_rate=2e-5, epsilon=1e
             batch_size=batch_size,
             )
 
+    device = get_device()
+
+    # Create model and put it on the device
     model = BertForSequenceClassification.from_pretrained('bert-large-uncased',
             output_attentions=True,
             output_hidden_states=True,
             num_labels=2,
             )
-
-    device = get_device(model)
+    model.to(device)
 
     optimizer = AdamW(model.parameters(),
             lr=learn_rate,
