@@ -173,7 +173,7 @@ def eval_epoch(device, model, dataloader):
         # Move stuff back to the CPU to compute accuracy
         logits = logits.detach().cpu().numpy()
         label_ids = b_labels.to('cpu').numpy()
-        total_eval_accuracy += flat_accuracy(logits, label_ids)
+        total_eval_accuracy += accuracy(logits, label_ids)
 
     avg_accuracy = total_eval_accuracy / len(dataloader)
     avg_loss = total_eval_loss / len(dataloader)
