@@ -13,8 +13,8 @@ cache = diskcache.Cache(".simcache")
 
 nlp = English()
 nlp.add_pipe('sentencizer')
-tokenizer = AutoTokenizer.from_pretrained('bert-large-cased')
-model = BertModel.from_pretrained('bert-large-cased',
+tokenizer = AutoTokenizer.from_pretrained('bert-large-uncased')
+model = BertModel.from_pretrained('bert-large-uncased',
   output_hidden_states = True,
   )
 
@@ -32,17 +32,20 @@ class PoolingStrategy(Enum):
     AVG4 = 'avg4'
 
 
-def tokenize(s):
+def tokenize(s, split_sentences=False, max_length=128):
     """Tokenize a given chunk of text as BERT model inputs.
 
     Returns:
         Inputs for BERT model. If the input text contained multiple sentences,
         they will be included individually so that the model runs a batch.
     """
-    doc = nlp(s)
-    sents = [str(s) for s in doc.sents]
-    return tokenizer(sents,
-            max_length=128,
+    batch = s
+    if split_sentences:
+        doc = nlp(s)
+        batch = [str(s) for s in doc.sents]
+
+    return tokenizer(batch,
+            max_length=max_length,
             padding='max_length',
             truncation=True,
             return_tensors='pt')
