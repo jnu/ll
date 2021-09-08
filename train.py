@@ -63,7 +63,7 @@ def get_device(model):
     if torch.cuda.is_available():
         for i in range(torch.cuda.device_count()):
             # Find a free GPU
-            if torch.cuda.memory_reserved > 0:
+            if torch.cuda.memory_reserved(i) > 0:
                 continue
             print("Using GPU {} for training: {}".format(i, torch.cuda.get_device_name(i)))
             device = torch.device('cuda:{}'.format(i))
