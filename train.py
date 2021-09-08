@@ -61,18 +61,17 @@ def set_seed(seed):
 
 def get_device(model):
     if torch.cuda.is_available():
+        print("GPU is available, looking for a free one ...")
         for i in range(torch.cuda.device_count()):
             # Find a free GPU
             if torch.cuda.memory_reserved(i) > 0:
                 continue
             print("Using GPU {} for training: {}".format(i, torch.cuda.get_device_name(i)))
-            device = torch.device('cuda:{}'.format(i))
-            break
-        model.cuda()
-    else:
-        print("No GPU available; training on CPU.")
-        device = torch.device('cpu')
-    return device
+            model.cuda()
+            return torch.device('cuda:{}'.format(i))
+
+    print("No free GPU found; training on CPU.")
+    return torch.device('cpu')
 
 
 def train_on_prof(path, batch_size=32, holdback=0.1, learn_rate=2e-5, epsilon=1e-8, epochs=4, seed=1207):
